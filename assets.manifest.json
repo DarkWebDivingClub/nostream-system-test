@@ -1,0 +1,9 @@
+{
+  "assets": [
+    {
+      "id": "sintel-1080p",
+      "url": "https://download.blender.org/durian/movies/Sintel.2010.1080p.mkv",
+      "target": "media/sintel/v1/Sintel.2010.1080p.mkv"
+    }
+  ]
+}

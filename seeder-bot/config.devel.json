@@ -1,0 +1,20 @@
+{
+  "nsec": "nsec17c0r3dwpf22vf6gw4qzldneqj9caukgs7ugea8qdsljsx3ulrm9s2kn0sc",
+  "profile": {
+    "name": "Transcoding Bot",
+    "bot": "true"
+  },
+  "communityPubkey": "5c156666a82028881c15eb1b6cee2cac8317114f777ca7c3e9ac4a77d031b8d5",
+  "globalRelay": [
+    "ws://strfry:7777/"
+  ],
+  "comRelay": [
+    "ws://strfry:7777/"
+  ],
+  "trackerAnnounce": [
+    "http://tracker:8000/announce"
+  ],
+  "uploadDir": "/tmp/iz-seeder-bot/upload",
+  "transcodingDir": "/tmp/iz-seeder-bot/transcoding",
+  "seedingDir": "/var/tmp/iz-seeder-bot/seeding"
+}
