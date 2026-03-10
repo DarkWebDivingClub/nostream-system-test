@@ -8,7 +8,8 @@
     "assets:prepare-smoke": "node scripts/prepare-smoke-asset.mjs",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:sintel": "npm run assets:prepare-smoke && RUN_SINTEL_E2E=1 vitest run tests/sintel-e2e.test.ts"
+    "test:sintel": "npm run assets:prepare-smoke && RUN_SINTEL_E2E=1 vitest run tests/sintel-e2e.test.ts",
+    "test:sintel:browser": "npm run assets:prepare-smoke && playwright test tests/sintel-browser.e2e.spec.ts"
   },
   "devDependencies": {
     "@red-token/welshman": "^0.2.9",
@@ -19,6 +20,7 @@
     "mock-local-storage": "^1.1.24",
     "nostr-tools": "2.10.4",
     "simple-peer": "^9.11.1",
+    "@playwright/test": "^1.53.0",
     "typescript": "^5.9.0",
     "vitest": "^3.2.0",
     "webtorrent": "^2.5.12",
