@@ -22,6 +22,10 @@ import {
   Nip9999SeederTorrentTransformationResponseEvent,
   NostrCommunityServiceClient
 } from 'iz-nostrlib/seederbot';
+import { Nip01UserMetaDataEvent, NostrUserProfileMetaData, UserType } from 'iz-nostrlib/nip01';
+import { Nip65RelayListMetadataEvent } from 'iz-nostrlib/nip65';
+import { Nip35TorrentEvent } from 'iz-nostrlib/nip35';
+import { DynamicPublisher, DynamicSubscription } from 'iz-nostrlib/ses';
 import { SignerType } from 'iz-nostrlib/ses';
 import { describe, expect, it } from 'vitest';
 
@@ -29,6 +33,11 @@ const testFileDir = path.dirname(fileURLToPath(import.meta.url));
 const projectRoot = path.resolve(testFileDir, '..');
 
 const relayUrl = process.env.RELAY_URL ?? 'ws://127.0.0.1:7777/';
+const communityRelayUrls = (process.env.COMMUNITY_RELAY_URLS ?? `${relayUrl},ws://strfry:7777/`)
+  .split(',')
+  .map((value) => value.trim())
+  .filter((value) => value.length > 0);
+const keepStack = process.env.KEEP_STACK === '1';
 const mediaCandidates = [
   process.env.SINTEL_FILE,
   path.join(projectRoot, '.assets/media/sintel/v1/Sintel.smoke.5s.mp4'),
@@ -43,7 +52,10 @@ const responseTimeoutMs = Number(process.env.RESPONSE_TIMEOUT_MS ?? '180000');
 
 const botNsec = 'nsec17c0r3dwpf22vf6gw4qzldneqj9caukgs7ugea8qdsljsx3ulrm9s2kn0sc';
 const bobNsec = 'nsec1zsp48upz3vd64lwhx7me8utrxyfxuzdwvxhfld2q0ehs0ya9mlxs47v64q';
-const communityPubkey = '5c156666a82028881c15eb1b6cee2cac8317114f777ca7c3e9ac4a77d031b8d5';
+const bigFishNsec = 'nsec16lc2cn2gzgf3vcv20lwkqquprqujpkq9pj0wcxmnw8scxh6j0yrqlc9ae0';
+const bigFishPubkey = '76e75c0c50ce7ef714b76eaf06d6a06a29d296d5bb86270818675a669938dbe2';
+const communityPubkey = bigFishPubkey;
+const imdbId = 'tt1727587';
 
 function runCompose(args: string[]): void {
   execFileSync('docker', ['compose', ...args], {
@@ -181,6 +193,101 @@ function waitForFinalResponse(dss: { eventStream: { emitter: { on: Function; off
   });
 }
 
+function getTagValue(tags: string[][] | undefined, name: string): string | null {
+  if (!tags) {
+    return null;
+  }
+
+  const tag = tags.find((item) => item[0] === name);
+  if (!tag || tag.length < 2) {
+    return null;
+  }
+  return tag[1] ?? null;
+}
+
+function extractSeededHash(response: Nip9999SeederTorrentTransformationResponseEvent): string {
+  const fromTag = getTagValue(response.event?.tags, 'x');
+  if (fromTag) {
+    return fromTag;
+  }
+
+  const message = String(response.state?.message ?? '');
+  const match = message.match(/[a-f0-9]{40}/i);
+  if (match) {
+    return match[0];
+  }
+
+  throw new Error('Final response did not include seeded torrent hash');
+}
+
+async function downloadTorrentByHash(wt: WebTorrent.Instance, infoHash: string, outputPath: string): Promise<Torrent> {
+  return await new Promise((resolve, reject) => {
+    const torrent = wt.add(infoHash, { announce, path: outputPath, maxWebConns: 500 });
+
+    torrent.once('done', () => resolve(torrent));
+    torrent.once('error', reject);
+  });
+}
+
+function readTorrentFileText(torrent: Torrent, outputPath: string, filenameSuffix: string): string {
+  const file = torrent.files.find((item) => item.path.endsWith(filenameSuffix));
+  if (!file) {
+    throw new Error(`Could not find file matching suffix "${filenameSuffix}" in downloaded torrent`);
+  }
+
+  return fs.readFileSync(path.join(outputPath, file.path), 'utf8');
+}
+
+async function bootstrapBigFishCommunity(globalContext: GlobalNostrContext): Promise<void> {
+  const session = await asyncCreateWelshmanSession({ type: SignerType.NIP01, nsec: bigFishNsec });
+  const identity = new Identity(globalContext, new Identifier(session));
+  if (identity.pubkey !== bigFishPubkey) {
+    throw new Error('Configured Big Fish nsec does not match expected pubkey');
+  }
+
+  const publisher = new DynamicPublisher(globalContext.profileService, identity);
+  publisher.publish(
+    new Nip01UserMetaDataEvent(
+      new NostrUserProfileMetaData('Big Fish', 'System-test community'),
+      UserType.COMMUNITY,
+      [['nip35']]
+    )
+  );
+  publisher.publish(new Nip65RelayListMetadataEvent(communityRelayUrls.map((relay) => [relay])));
+  await wait(1_500);
+}
+
+function waitForRegisteredAsset(dss: { eventStream: { emitter: { on: Function; off: Function } } }, expectedHash: string): Promise<Nip35TorrentEvent> {
+  return new Promise((resolve, reject) => {
+    const timeout = setTimeout(() => {
+      dss.eventStream.emitter.off(EventType.DISCOVERED, onDiscovered);
+      reject(new Error(`Timed out waiting for registered Nip35 asset for hash ${expectedHash}`));
+    }, responseTimeoutMs);
+
+    const onDiscovered = (event: unknown) => {
+      const trustedEvent = event as { kind?: number } | undefined;
+      if (trustedEvent?.kind !== Nip35TorrentEvent.KIND) {
+        return;
+      }
+
+      try {
+        const asset = Nip35TorrentEvent.buildFromEvent(event as never);
+        if (asset.x !== expectedHash) {
+          return;
+        }
+
+        clearTimeout(timeout);
+        dss.eventStream.emitter.off(EventType.DISCOVERED, onDiscovered);
+        resolve(asset);
+      } catch {
+        // ignore non-matching/invalid events while waiting
+      }
+    };
+
+    dss.eventStream.emitter.on(EventType.DISCOVERED, onDiscovered);
+  });
+}
+
 const rtcConfig = {
   iceServers: [
     {
@@ -240,6 +347,8 @@ describe('sintel e2e', () => {
 
         const globalContext = new GlobalNostrContext([relayUrl]);
         await wait(2_000);
+        await bootstrapBigFishCommunity(globalContext);
+        logStage('big fish community bootstrapped', { bigFishPubkey, relayUrl });
 
         const bobSession = await asyncCreateWelshmanSession({ type: SignerType.NIP01, nsec: bobNsec });
         const bobIdentity = new Identity(globalContext, new Identifier(bobSession));
@@ -263,7 +372,7 @@ describe('sintel e2e', () => {
         const botPubkey = getPublicKey(botPrivate.data);
 
         const request = new Nip9999SeederTorrentTransformationRequestEvent(botPubkey, 'Sintel', infoHash, {
-          imdbId: 'tt1727587',
+          imdbId,
           file: path.basename(sourceMediaPath),
           subtitles: [],
           formats: {
@@ -275,7 +384,7 @@ describe('sintel e2e', () => {
         });
 
         logStage('publishing nip9999 transformation request');
-        const { dss } = client.request(request);
+        const { dss, pub } = client.request(request);
         logStage('request published', { requestEventId: request.event?.id ?? null });
         const { response } = await waitForFinalResponse(dss);
         logStage('final response received', { state: response.state });
@@ -284,13 +393,68 @@ describe('sintel e2e', () => {
         expect(response.state?.final).toBe(true);
         expect(response.state?.state).toBe('seeding');
         expect(String(response.state?.message ?? '')).toContain('starting to seed at');
+
+        const seededHash = extractSeededHash(response);
+        const nowInSeconds = Math.floor(Date.now() / 1000);
+        new DynamicSubscription(dss, [
+          {
+            kinds: [Nip35TorrentEvent.KIND],
+            '#x': [seededHash],
+            since: nowInSeconds - 5
+          }
+        ]);
+        const registeredAssetWait = waitForRegisteredAsset(dss, seededHash);
+        const assetRegistration = new Nip35TorrentEvent(
+          'Sintel',
+          seededHash,
+          'Sintel transformed asset',
+          [],
+          announce,
+          [`imdb:${imdbId}`],
+          ['movie']
+        );
+        logStage('publishing nip35 asset registration', { seededHash, imdbId });
+        pub.publish(assetRegistration);
+        const registeredAsset = await registeredAssetWait;
+        logStage('nip35 asset registered', {
+          x: registeredAsset.x,
+          title: registeredAsset.title,
+          is: registeredAsset.is
+        });
+
+        logStage('downloading transformed output', { seededHash });
+        const transformedOutputPath = path.join(projectRoot, '.assets', 'downloads', seededHash);
+        fs.mkdirSync(transformedOutputPath, { recursive: true });
+
+        const transformedTorrent = await withTimeout(
+          downloadTorrentByHash(wt, seededHash, transformedOutputPath),
+          responseTimeoutMs,
+          'client download transformed output stage'
+        );
+        logStage('transformed output downloaded', {
+          seededHash,
+          files: transformedTorrent.files.map((item) => item.path)
+        });
+
+        const downloadedPaths = transformedTorrent.files.map((item) => item.path);
+        expect(downloadedPaths.some((entry) => entry.endsWith('manifest.mpd'))).toBe(true);
+        expect(downloadedPaths.some((entry) => entry.endsWith('_dashinit.mp4'))).toBe(true);
+
+        const manifestText = readTorrentFileText(transformedTorrent, transformedOutputPath, 'manifest.mpd');
+        expect(manifestText).toContain('<MPD');
+        expect(manifestText).toContain('video_tiny');
+        expect(registeredAsset.is.some((value) => value.includes(imdbId))).toBe(true);
       } catch (error) {
         logStage('test failed, dumping compose diagnostics');
         dumpComposeDiagnostics();
         throw error;
       } finally {
         wt.destroy();
-        runCompose(['--profile', 'sintel', 'down', '-v', '--remove-orphans']);
+        if (!keepStack) {
+          runCompose(['--profile', 'sintel', 'down', '-v', '--remove-orphans']);
+        } else {
+          logStage('KEEP_STACK=1 set, leaving docker compose stack running');
+        }
       }
     }
   );

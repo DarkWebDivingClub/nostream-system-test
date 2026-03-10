@@ -4,7 +4,7 @@
     "name": "Transcoding Bot",
     "bot": "true"
   },
-  "communityPubkey": "5c156666a82028881c15eb1b6cee2cac8317114f777ca7c3e9ac4a77d031b8d5",
+  "communityPubkey": "76e75c0c50ce7ef714b76eaf06d6a06a29d296d5bb86270818675a669938dbe2",
   "globalRelay": [
     "ws://strfry:7777/"
   ],
@@ -12,9 +12,11 @@
     "ws://strfry:7777/"
   ],
   "trackerAnnounce": [
-    "http://tracker:8000/announce"
+    "http://tracker:8000/announce",
+    "ws://tracker:8000"
   ],
   "uploadDir": "/tmp/iz-seeder-bot/upload",
   "transcodingDir": "/tmp/iz-seeder-bot/transcoding",
-  "seedingDir": "/var/tmp/iz-seeder-bot/seeding"
+  "seedingDir": "/var/tmp/iz-seeder-bot/seeding",
+  "torrentMetaDir": "/var/tmp/iz-seeder-bot/torrents"
 }

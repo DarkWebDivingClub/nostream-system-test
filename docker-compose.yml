@@ -36,5 +36,41 @@ services:
       - ./seeder-bot/transcoding:/tmp/iz-seeder-bot/transcoding
       - ./seeder-bot/seeding:/var/tmp/iz-seeder-bot/seeding
 
+  browser:
+    profiles: ["sintel"]
+    image: selenium/standalone-chrome:4.31.0
+    restart: unless-stopped
+    shm_size: "2gb"
+    depends_on:
+      - strfry
+      - tracker
+      - seeder-bot
+    ports:
+      - "4444:4444"
+      - "7900:7900"
+    environment:
+      - SE_VNC_NO_PASSWORD=1
+      - SE_NODE_MAX_SESSIONS=1
+      - SE_NODE_OVERRIDE_MAX_SESSIONS=true
+      - SE_BROWSER_ARGS_WEBCRYPTO=--unsafely-treat-insecure-origin-as-secure=http://iz-stream-ui:5173
+
+  iz-stream-ui:
+    profiles: ["sintel"]
+    image: node:22
+    restart: unless-stopped
+    working_dir: /app
+    command: ["sh", "-lc", "npm run dev -- --host 0.0.0.0 --port 5173"]
+    depends_on:
+      - strfry
+      - tracker
+      - seeder-bot
+    environment:
+      - VITE_APPLICATION_RELAY=ws://strfry:7777/
+      - VITE_DEFAULT_COMMUNITY_RELAY=ws://strfry:7777/
+      - VITE_TORRENT_ANNOUNCE=ws://tracker:8000
+    volumes:
+      - ../iz-stream:/app
+      - ../iz-stream/node_modules:/app/node_modules
+
 volumes:
   strfry-db:
