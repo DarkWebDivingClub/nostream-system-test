@@ -40,15 +40,13 @@ const communityRelayUrls = (process.env.COMMUNITY_RELAY_URLS ?? `${relayUrl},ws:
 const keepStack = process.env.KEEP_STACK === '1';
 const mediaCandidates = [
   process.env.SINTEL_FILE,
-  path.join(projectRoot, '.assets/media/sintel/v1/Sintel.smoke.5s.mp4'),
   path.join(projectRoot, '.assets/media/sintel/v1/Sintel.2010.1080p.mkv'),
-  '/home/rene/git/iz-seeder-bot/test/data/sintel/orig/Sintel.2010.1080p.mkv',
-  '/home/rene/git/iz-seeder-bot/test/data/bbb/orig/bbb_sunflower_2160p_60fps_normal.mp4'
+  '/home/rene/git/iz-seeder-bot/test/data/sintel/orig/Sintel.2010.1080p.mkv'
 ].filter((value): value is string => Boolean(value));
 
 const sourceMediaPath = mediaCandidates.find((candidate) => fs.existsSync(candidate));
 const seedHashTimeoutMs = Number(process.env.SEED_HASH_TIMEOUT_MS ?? '30000');
-const responseTimeoutMs = Number(process.env.RESPONSE_TIMEOUT_MS ?? '180000');
+const responseTimeoutMs = Number(process.env.RESPONSE_TIMEOUT_MS ?? '900000');
 
 const botNsec = 'nsec17c0r3dwpf22vf6gw4qzldneqj9caukgs7ugea8qdsljsx3ulrm9s2kn0sc';
 const bobNsec = 'nsec1zsp48upz3vd64lwhx7me8utrxyfxuzdwvxhfld2q0ehs0ya9mlxs47v64q';
@@ -438,11 +436,13 @@ describe('sintel e2e', () => {
 
         const downloadedPaths = transformedTorrent.files.map((item) => item.path);
         expect(downloadedPaths.some((entry) => entry.endsWith('manifest.mpd'))).toBe(true);
-        expect(downloadedPaths.some((entry) => entry.endsWith('_dashinit.mp4'))).toBe(true);
+        expect(downloadedPaths.some((entry) => entry.endsWith('.mp4'))).toBe(true);
+        expect(downloadedPaths.some((entry) => entry.endsWith('.m4s'))).toBe(true);
 
         const manifestText = readTorrentFileText(transformedTorrent, transformedOutputPath, 'manifest.mpd');
         expect(manifestText).toContain('<MPD');
-        expect(manifestText).toContain('video_tiny');
+        expect(manifestText).toContain('SegmentTemplate');
+        expect(manifestText).toContain('.m4s');
         expect(registeredAsset.is.some((value) => value.includes(imdbId))).toBe(true);
       } catch (error) {
         logStage('test failed, dumping compose diagnostics');

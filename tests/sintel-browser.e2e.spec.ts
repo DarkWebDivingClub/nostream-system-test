@@ -41,13 +41,12 @@ const izStreamUrl = process.env.IZ_STREAM_URL ?? 'http://127.0.0.1:4173';
 const keepStack = process.env.KEEP_STACK === '1';
 const mediaCandidates = [
   process.env.SINTEL_FILE,
-  path.join(projectRoot, '.assets/media/sintel/v1/Sintel.smoke.5s.mp4'),
   path.join(projectRoot, '.assets/media/sintel/v1/Sintel.2010.1080p.mkv')
 ].filter((value): value is string => Boolean(value));
 
 const sourceMediaPath = mediaCandidates.find((candidate) => fs.existsSync(candidate));
 const seedHashTimeoutMs = Number(process.env.SEED_HASH_TIMEOUT_MS ?? '30000');
-const responseTimeoutMs = Number(process.env.RESPONSE_TIMEOUT_MS ?? '180000');
+const responseTimeoutMs = Number(process.env.RESPONSE_TIMEOUT_MS ?? '900000');
 
 const botNsec = 'nsec17c0r3dwpf22vf6gw4qzldneqj9caukgs7ugea8qdsljsx3ulrm9s2kn0sc';
 const bobNsec = 'nsec1zsp48upz3vd64lwhx7me8utrxyfxuzdwvxhfld2q0ehs0ya9mlxs47v64q';

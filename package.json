@@ -6,22 +6,26 @@
   "scripts": {
     "assets:fetch": "node scripts/fetch-assets.mjs",
     "assets:prepare-smoke": "node scripts/prepare-smoke-asset.mjs",
+    "bench:videojs": "node scripts/serve-bench.mjs",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:sintel": "npm run assets:prepare-smoke && RUN_SINTEL_E2E=1 vitest run tests/sintel-e2e.test.ts",
-    "test:sintel:browser": "npm run assets:prepare-smoke && playwright test tests/sintel-browser.e2e.spec.ts"
+    "test:sintel": "npm run assets:fetch && RUN_SINTEL_E2E=1 vitest run tests/sintel-e2e.test.ts",
+    "test:sintel:browser": "npm run assets:fetch && playwright test tests/sintel-browser.e2e.spec.ts"
   },
   "devDependencies": {
+    "@playwright/test": "^1.53.0",
     "@red-token/welshman": "^0.2.9",
     "@types/node": "^24.0.0",
     "@types/simple-peer": "^9.11.9",
     "@types/webtorrent": "^0.110.1",
+    "dashjs": "^5.1.1",
     "iz-nostrlib": "file:../iz-nostrlib",
     "mock-local-storage": "^1.1.24",
     "nostr-tools": "2.10.4",
     "simple-peer": "^9.11.1",
-    "@playwright/test": "^1.53.0",
     "typescript": "^5.9.0",
+    "video.js": "^8.23.7",
+    "videojs-contrib-dash": "^5.1.1",
     "vitest": "^3.2.0",
     "webtorrent": "^2.5.12",
     "ws": "^8.18.0"

@@ -1,0 +1,198 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Video.js DASH Bench</title>
+  <link href="/node_modules/video.js/dist/video-js.css" rel="stylesheet">
+  <style>
+    body {
+      margin: 0;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      background: #0e1318;
+      color: #d7e3ee;
+    }
+    main {
+      max-width: 1100px;
+      margin: 24px auto;
+      padding: 0 16px;
+    }
+    .controls {
+      display: grid;
+      gap: 12px;
+      grid-template-columns: 1fr auto auto;
+      margin-bottom: 16px;
+    }
+    input, select, button {
+      background: #1a232c;
+      color: #d7e3ee;
+      border: 1px solid #2f3d4a;
+      border-radius: 8px;
+      padding: 10px 12px;
+      font-size: 14px;
+    }
+    button {
+      cursor: pointer;
+      font-weight: 700;
+    }
+    .video-wrap {
+      border: 1px solid #2f3d4a;
+      border-radius: 10px;
+      overflow: hidden;
+      margin-bottom: 16px;
+    }
+    .video-js {
+      width: 100%;
+      height: 500px;
+      background: #000;
+    }
+    .log-box {
+      background: #0a0f14;
+      border: 1px solid #2f3d4a;
+      border-radius: 10px;
+      padding: 10px;
+      height: 280px;
+      overflow: auto;
+      white-space: pre-wrap;
+      line-height: 1.4;
+      font-size: 12px;
+    }
+    .hint {
+      color: #92a6ba;
+      margin-bottom: 12px;
+      font-size: 13px;
+    }
+  </style>
+</head>
+<body>
+<main>
+  <h2>Video.js DASH Bench</h2>
+  <p class="hint">Use this page to isolate player/manifest/segment issues. Query param also works: <code>?mpd=&lt;url&gt;</code>.</p>
+
+  <div class="controls">
+    <input id="mpdInput" type="text" placeholder="https://.../manifest.mpd">
+    <select id="presetSelect">
+      <option value="">Presets</option>
+      <option value="https://dash.akamaized.net/dash264/TestCases/1a/netflix/exMPD_BIP_TC1.mpd">DASH-IF Netflix TC1</option>
+      <option value="https://dash.akamaized.net/akamai/bbb_30fps/bbb_30fps.mpd">Big Buck Bunny (Akamai)</option>
+      <option value="https://dash.akamaized.net/envivio/EnvivioDash3/manifest.mpd">Envivio Dash3</option>
+    </select>
+    <button id="loadBtn">Load</button>
+  </div>
+
+  <div class="video-wrap">
+    <video id="benchPlayer" class="video-js vjs-default-skin" controls preload="auto"></video>
+  </div>
+
+  <div class="log-box" id="logBox"></div>
+</main>
+
+<script src="/node_modules/video.js/dist/video.min.js"></script>
+<script src="/node_modules/videojs-contrib-dash/dist/videojs-dash.min.js"></script>
+<script>
+  const logBox = document.getElementById('logBox');
+  const mpdInput = document.getElementById('mpdInput');
+  const presetSelect = document.getElementById('presetSelect');
+  const loadBtn = document.getElementById('loadBtn');
+
+  function log(label, data) {
+    const ts = new Date().toISOString();
+    const line = data === undefined
+      ? `[${ts}] ${label}`
+      : `[${ts}] ${label} ${JSON.stringify(data)}`;
+    logBox.textContent += `${line}\n`;
+    logBox.scrollTop = logBox.scrollHeight;
+    console.log('[bench]', label, data ?? '');
+  }
+
+  const nativeFetch = window.fetch.bind(window);
+  window.fetch = async (...args) => {
+    const req = args[0];
+    const url = typeof req === 'string' ? req : req.url;
+    const started = performance.now();
+    try {
+      const res = await nativeFetch(...args);
+      log('fetch', { url, status: res.status, ms: Math.round(performance.now() - started) });
+      return res;
+    } catch (error) {
+      log('fetch-error', { url, error: String(error), ms: Math.round(performance.now() - started) });
+      throw error;
+    }
+  };
+
+  const nativeOpen = XMLHttpRequest.prototype.open;
+  XMLHttpRequest.prototype.open = function patchedOpen(method, url, ...rest) {
+    this.__benchUrl = url;
+    this.addEventListener('loadend', () => {
+      log('xhr', { method, url: this.__benchUrl, status: this.status });
+    });
+    return nativeOpen.call(this, method, url, ...rest);
+  };
+
+  if (typeof window.videojs === 'undefined') {
+    log('fatal', { message: 'videojs failed to load. Check /node_modules assets and server logs.' });
+    throw new Error('videojs is not defined');
+  }
+
+  const player = videojs('benchPlayer', {
+    html5: {
+      vhs: { overrideNative: true }
+    }
+  });
+
+  [
+    'loadstart',
+    'loadedmetadata',
+    'loadeddata',
+    'canplay',
+    'canplaythrough',
+    'playing',
+    'pause',
+    'waiting',
+    'stalled',
+    'ended',
+    'error'
+  ].forEach((eventName) => {
+    player.on(eventName, () => {
+      if (eventName === 'error') {
+        log('player-error', player.error());
+      } else {
+        log(`player-${eventName}`);
+      }
+    });
+  });
+
+  function loadMpd(url) {
+    if (!url) {
+      return;
+    }
+    logBox.textContent = '';
+    log('load', { url });
+    player.src({
+      src: url,
+      type: 'application/dash+xml'
+    });
+    player.play().catch((error) => {
+      log('autoplay-blocked', { error: String(error) });
+    });
+  }
+
+  presetSelect.addEventListener('change', () => {
+    if (presetSelect.value) {
+      mpdInput.value = presetSelect.value;
+    }
+  });
+
+  loadBtn.addEventListener('click', () => {
+    loadMpd(mpdInput.value.trim());
+  });
+
+  const params = new URLSearchParams(window.location.search);
+  const initialMpd = params.get('mpd');
+  if (initialMpd) {
+    mpdInput.value = initialMpd;
+    loadMpd(initialMpd);
+  }
+</script>
+</body>
+</html>

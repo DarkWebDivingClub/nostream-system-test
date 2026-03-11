@@ -35,6 +35,7 @@ services:
       - ./seeder-bot/upload:/tmp/iz-seeder-bot/upload
       - ./seeder-bot/transcoding:/tmp/iz-seeder-bot/transcoding
       - ./seeder-bot/seeding:/var/tmp/iz-seeder-bot/seeding
+      - ./seeder-bot/torrents:/var/tmp/iz-seeder-bot/torrents
 
   browser:
     profiles: ["sintel"]
