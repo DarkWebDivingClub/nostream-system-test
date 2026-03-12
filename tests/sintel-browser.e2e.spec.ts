@@ -30,14 +30,20 @@ import { DynamicPublisher } from 'iz-nostrlib/ses';
 
 const testFileDir = path.dirname(fileURLToPath(import.meta.url));
 const projectRoot = path.resolve(testFileDir, '..');
-const izStreamRoot = '/home/rene/git/iz-stream';
+const nostreamUiRootCandidates = [
+  process.env.NOSTREAM_UI_ROOT,
+  process.env.IZ_STREAM_ROOT,
+  '/home/rene/git/nostream/frontend',
+  '/home/rene/git/iz-stream'
+].filter((value): value is string => Boolean(value));
+const nostreamUiRoot = nostreamUiRootCandidates.find((candidate) => fs.existsSync(candidate));
 
 const relayUrl = process.env.RELAY_URL ?? 'ws://127.0.0.1:7777/';
 const communityRelayUrls = (process.env.COMMUNITY_RELAY_URLS ?? `${relayUrl},ws://strfry:7777/`)
   .split(',')
   .map((value) => value.trim())
   .filter((value) => value.length > 0);
-const izStreamUrl = process.env.IZ_STREAM_URL ?? 'http://127.0.0.1:4173';
+const nostreamUiUrl = process.env.NOSTREAM_UI_URL ?? process.env.IZ_STREAM_URL ?? 'http://127.0.0.1:4173';
 const keepStack = process.env.KEEP_STACK === '1';
 const mediaCandidates = [
   process.env.SINTEL_FILE,
@@ -184,9 +190,13 @@ function extractSeededHash(response: Nip9999SeederTorrentTransformationResponseE
   throw new Error('Final response did not include seeded torrent hash');
 }
 
-function startIzStreamDevServer(): ChildProcess {
+function startNostreamUiDevServer(): ChildProcess {
+  if (!nostreamUiRoot) {
+    throw new Error('Nostream UI source path not found. Set NOSTREAM_UI_ROOT or IZ_STREAM_ROOT.');
+  }
+
   const child = spawn('npm', ['run', 'dev', '--', '--host', '127.0.0.1', '--port', '4173'], {
-    cwd: izStreamRoot,
+    cwd: nostreamUiRoot,
     stdio: 'inherit',
     env: {
       ...process.env,
@@ -242,7 +252,7 @@ const rtcConfig = {
   iceCandidatePoolSize: 0
 };
 
-test('sintel browser playback through iz-stream', async ({ page }) => {
+test('sintel browser playback through nostream ui', async ({ page }) => {
   if (!sourceMediaPath) {
     throw new Error('No source media found. Set SINTEL_FILE or run: npm run assets:fetch.');
   }
@@ -308,10 +318,10 @@ test('sintel browser playback through iz-stream', async ({ page }) => {
     const { response } = await waitForFinalResponse(dss);
     const seededHash = extractSeededHash(response);
 
-    devServer = startIzStreamDevServer();
-    await waitForHttpReady(`${izStreamUrl}/e2e/watch?hash=${seededHash}`, 120_000);
+    devServer = startNostreamUiDevServer();
+    await waitForHttpReady(`${nostreamUiUrl}/e2e/watch?hash=${seededHash}`, 120_000);
 
-    await page.goto(`${izStreamUrl}/e2e/watch?hash=${seededHash}`, { waitUntil: 'networkidle' });
+    await page.goto(`${nostreamUiUrl}/e2e/watch?hash=${seededHash}`, { waitUntil: 'networkidle' });
     await expect(page.locator('[data-testid="missing-hash"]')).toHaveCount(0);
     await expect(page.locator('video[data-testid="video-player"]')).toBeVisible();
     expect(page.url()).toContain(`hash=${seededHash}`);

@@ -65,11 +65,11 @@ function runCompose(args: string[]): void {
 function logStage(message: string, data?: unknown): void {
   const timestamp = new Date().toISOString();
   if (data === undefined) {
-    console.log(`[sintel-test] ${timestamp} ${message}`);
+    console.log(`[nostream-test] ${timestamp} ${message}`);
     return;
   }
 
-  console.log(`[sintel-test] ${timestamp} ${message}`, data);
+  console.log(`[nostream-test] ${timestamp} ${message}`, data);
 }
 
 function withTimeout<T>(promise: Promise<T>, timeoutMs: number, label: string): Promise<T> {
@@ -101,7 +101,7 @@ function dumpComposeDiagnostics(): void {
       stdio: 'inherit'
     });
   } catch (error) {
-    console.error('[sintel-test] failed to dump compose diagnostics', error);
+    console.error('[nostream-test] failed to dump compose diagnostics', error);
   }
 }
 
@@ -309,7 +309,7 @@ const announce = (process.env.TORRENT_ANNOUNCE ??
   .map((value) => value.trim())
   .filter((value) => value.length > 0);
 
-describe('sintel e2e', () => {
+describe('nostream sintel e2e', () => {
   const runSintel = process.env.RUN_SINTEL_E2E === '1';
 
   (runSintel ? it : it.skip)(
