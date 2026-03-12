@@ -29,8 +29,8 @@ services:
       - strfry
       - tracker
     volumes:
-      - ../iz-seeder-bot/dist:/app/dist:ro
-      - ../iz-seeder-bot/node_modules:/app/node_modules:ro
+      - ${NOSTREAM_SEEDER_BOT_DIST:-../../iz-seeder-bot/dist}:/app/dist:ro
+      - ${NOSTREAM_SEEDER_BOT_NODE_MODULES:-../../iz-seeder-bot/node_modules}:/app/node_modules:ro
       - ./seeder-bot/config.devel.json:/app/config.devel.json:ro
       - ./seeder-bot/upload:/tmp/iz-seeder-bot/upload
       - ./seeder-bot/transcoding:/tmp/iz-seeder-bot/transcoding
@@ -53,9 +53,9 @@ services:
       - SE_VNC_NO_PASSWORD=1
       - SE_NODE_MAX_SESSIONS=1
       - SE_NODE_OVERRIDE_MAX_SESSIONS=true
-      - SE_BROWSER_ARGS_WEBCRYPTO=--unsafely-treat-insecure-origin-as-secure=http://iz-stream-ui:5173
+      - SE_BROWSER_ARGS_WEBCRYPTO=--unsafely-treat-insecure-origin-as-secure=http://nostream-ui:5173
 
-  iz-stream-ui:
+  nostream-ui:
     profiles: ["sintel"]
     image: node:22
     restart: unless-stopped
@@ -70,8 +70,12 @@ services:
       - VITE_DEFAULT_COMMUNITY_RELAY=ws://strfry:7777/
       - VITE_TORRENT_ANNOUNCE=ws://tracker:8000
     volumes:
-      - ../iz-stream:/app
-      - ../iz-stream/node_modules:/app/node_modules
+      - ${NOSTREAM_UI_ROOT:-../nostream-ui}:/app
+      - ${NOSTREAM_UI_NODE_MODULES:-../nostream-ui/node_modules}:/app/node_modules
+    networks:
+      default:
+        aliases:
+          - iz-stream-ui
 
 volumes:
   strfry-db:
