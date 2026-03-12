@@ -37,6 +37,16 @@ services:
       - ./seeder-bot/seeding:/var/tmp/iz-seeder-bot/seeding
       - ./seeder-bot/torrents:/var/tmp/iz-seeder-bot/torrents
 
+  nostream-imdb:
+    profiles: ["sintel"]
+    image: node:22
+    restart: unless-stopped
+    working_dir: /app
+    command: ["sh", "-lc", "npm run dev"]
+    volumes:
+      - ${NOSTREAM_IMDB_ROOT:-../nostream-imdb}:/app
+      - ${NOSTREAM_IMDB_NODE_MODULES:-../nostream-imdb/node_modules}:/app/node_modules
+
   browser:
     profiles: ["sintel"]
     image: selenium/standalone-chrome:4.31.0
@@ -65,10 +75,12 @@ services:
       - strfry
       - tracker
       - seeder-bot
+      - nostream-imdb
     environment:
       - VITE_APPLICATION_RELAY=ws://strfry:7777/
       - VITE_DEFAULT_COMMUNITY_RELAY=ws://strfry:7777/
       - VITE_TORRENT_ANNOUNCE=ws://tracker:8000
+      - VITE_IMDB_API=http://nostream-imdb:4000
     volumes:
       - ${NOSTREAM_UI_ROOT:-../nostream-ui}:/app
       - ${NOSTREAM_UI_NODE_MODULES:-../nostream-ui/node_modules}:/app/node_modules
