@@ -4,3 +4,6 @@ strfry-db/
 
 seeder-bot/upload/
 seeder-bot/seeding/
+seeder-bot/torrents/
+seeder-bot/*.torrent
+test-results/
