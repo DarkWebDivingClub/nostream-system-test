@@ -4,29 +4,29 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import 'mock-local-storage';
-import { getDefaultAppContext, getDefaultNetContext } from '../../iz-nostrlib/node_modules/@red-token/welshman/build/src/app/index.js';
-import { setContext } from '../../iz-nostrlib/node_modules/@red-token/welshman/build/src/lib/index.js';
+import { getDefaultAppContext, getDefaultNetContext } from '../../nostream-sdk/node_modules/@red-token/welshman/build/src/app/index.js';
+import { setContext } from '../../nostream-sdk/node_modules/@red-token/welshman/build/src/lib/index.js';
 import SimplePeer from 'simple-peer';
 import WebTorrent, { type Torrent } from 'webtorrent';
 import { getPublicKey, nip19 } from 'nostr-tools';
-import { EventType } from 'iz-nostrlib';
+import { EventType } from '@nostream/sdk';
 import {
   CommunityNostrContext,
   GlobalNostrContext,
   Identity,
   Identifier,
   asyncCreateWelshmanSession
-} from 'iz-nostrlib/communities';
+} from '@nostream/sdk/communities';
 import {
   Nip9999SeederTorrentTransformationRequestEvent,
   Nip9999SeederTorrentTransformationResponseEvent,
   NostrCommunityServiceClient
-} from 'iz-nostrlib/seederbot';
-import { Nip01UserMetaDataEvent, NostrUserProfileMetaData, UserType } from 'iz-nostrlib/nip01';
-import { Nip65RelayListMetadataEvent } from 'iz-nostrlib/nip65';
-import { Nip35TorrentEvent } from 'iz-nostrlib/nip35';
-import { DynamicPublisher, DynamicSubscription } from 'iz-nostrlib/ses';
-import { SignerType } from 'iz-nostrlib/ses';
+} from '@nostream/sdk/seederbot';
+import { Nip01UserMetaDataEvent, NostrUserProfileMetaData, UserType } from '@nostream/sdk/nip01';
+import { Nip65RelayListMetadataEvent } from '@nostream/sdk/nip65';
+import { Nip35TorrentEvent } from '@nostream/sdk/nip35';
+import { DynamicPublisher, DynamicSubscription } from '@nostream/sdk/ses';
+import { SignerType } from '@nostream/sdk/ses';
 import { describe, expect, it } from 'vitest';
 
 const testFileDir = path.dirname(fileURLToPath(import.meta.url));

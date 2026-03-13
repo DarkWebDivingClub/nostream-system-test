@@ -5,28 +5,28 @@ import { fileURLToPath } from 'node:url';
 
 import { expect, test } from '@playwright/test';
 import 'mock-local-storage';
-import { getDefaultAppContext, getDefaultNetContext } from '../../iz-nostrlib/node_modules/@red-token/welshman/build/src/app/index.js';
-import { setContext } from '../../iz-nostrlib/node_modules/@red-token/welshman/build/src/lib/index.js';
+import { getDefaultAppContext, getDefaultNetContext } from '../../nostream-sdk/node_modules/@red-token/welshman/build/src/app/index.js';
+import { setContext } from '../../nostream-sdk/node_modules/@red-token/welshman/build/src/lib/index.js';
 import { getPublicKey, nip19 } from 'nostr-tools';
 import SimplePeer from 'simple-peer';
 import WebTorrent, { type Torrent } from 'webtorrent';
-import { EventType } from 'iz-nostrlib';
+import { EventType } from '@nostream/sdk';
 import {
   CommunityNostrContext,
   GlobalNostrContext,
   Identity,
   Identifier,
   asyncCreateWelshmanSession
-} from 'iz-nostrlib/communities';
+} from '@nostream/sdk/communities';
 import {
   Nip9999SeederTorrentTransformationRequestEvent,
   Nip9999SeederTorrentTransformationResponseEvent,
   NostrCommunityServiceClient
-} from 'iz-nostrlib/seederbot';
-import { Nip01UserMetaDataEvent, NostrUserProfileMetaData, UserType } from 'iz-nostrlib/nip01';
-import { Nip65RelayListMetadataEvent } from 'iz-nostrlib/nip65';
-import { SignerType } from 'iz-nostrlib/ses';
-import { DynamicPublisher } from 'iz-nostrlib/ses';
+} from '@nostream/sdk/seederbot';
+import { Nip01UserMetaDataEvent, NostrUserProfileMetaData, UserType } from '@nostream/sdk/nip01';
+import { Nip65RelayListMetadataEvent } from '@nostream/sdk/nip65';
+import { SignerType } from '@nostream/sdk/ses';
+import { DynamicPublisher } from '@nostream/sdk/ses';
 
 const testFileDir = path.dirname(fileURLToPath(import.meta.url));
 const projectRoot = path.resolve(testFileDir, '..');

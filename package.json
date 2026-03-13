@@ -20,7 +20,7 @@
     "@types/simple-peer": "^9.11.9",
     "@types/webtorrent": "^0.110.1",
     "dashjs": "^5.1.1",
-    "iz-nostrlib": "file:../../iz-nostrlib",
+    "@nostream/sdk": "file:../nostream-sdk",
     "mock-local-storage": "^1.1.24",
     "nostr-tools": "2.10.4",
     "simple-peer": "^9.11.1",
