@@ -14,7 +14,7 @@
     "test:sintel:browser": "npm run assets:fetch && playwright test tests/sintel-browser.e2e.spec.ts"
   },
   "devDependencies": {
-    "@nostream/sdk": "^0.2.4",
+    "@nostream/sdk": "^0.2.8",
     "@playwright/test": "^1.53.0",
     "@red-token/welshman": "^0.2.9",
     "@types/node": "^24.0.0",
@@ -33,8 +33,5 @@
   },
   "overrides": {
     "nostr-tools": "2.10.4"
-  },
-  "dependencies": {
-    "@nostream/sdk": "^0.2.7"
   }
 }
