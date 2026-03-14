@@ -9,7 +9,7 @@ services:
     volumes:
       - strfry-db:/app/strfry-db
       - ./strfry.conf:/app/strfry.conf:ro
-    command: ["relay"]
+    command: ["relay", "--nofiles", "${STRFRY_NOFILES:-524288}"]
 
   tracker:
     profiles: ["sintel"]
