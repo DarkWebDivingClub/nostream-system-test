@@ -4,8 +4,8 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import 'mock-local-storage';
-import { getDefaultAppContext, getDefaultNetContext } from '../../nostream-sdk/node_modules/@red-token/welshman/build/src/app/index.js';
-import { setContext } from '../../nostream-sdk/node_modules/@red-token/welshman/build/src/lib/index.js';
+import { getDefaultAppContext, getDefaultNetContext } from '@red-token/welshman/app';
+import { setContext } from '@red-token/welshman/lib';
 import SimplePeer from 'simple-peer';
 import WebTorrent, { type Torrent } from 'webtorrent';
 import { getPublicKey, nip19 } from 'nostr-tools';
@@ -41,7 +41,7 @@ const keepStack = process.env.KEEP_STACK === '1';
 const mediaCandidates = [
   process.env.SINTEL_FILE,
   path.join(projectRoot, '.assets/media/sintel/v1/Sintel.2010.1080p.mkv'),
-  '/home/rene/git/iz-seeder-bot/test/data/sintel/orig/Sintel.2010.1080p.mkv'
+  '/home/rene/git/nostream/nostream-seeder-bot/test/data/sintel/orig/Sintel.2010.1080p.mkv'
 ].filter((value): value is string => Boolean(value));
 
 const sourceMediaPath = mediaCandidates.find((candidate) => fs.existsSync(candidate));
