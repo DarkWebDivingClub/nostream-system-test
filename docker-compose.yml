@@ -29,8 +29,8 @@ services:
       - strfry
       - tracker
     volumes:
-      - ${NOSTREAM_SEEDER_BOT_DIST:-../../iz-seeder-bot/dist}:/app/dist:ro
-      - ${NOSTREAM_SEEDER_BOT_NODE_MODULES:-../../iz-seeder-bot/node_modules}:/app/node_modules:ro
+      - ${NOSTREAM_SEEDER_BOT_DIST:-../nostream-seeder-bot/dist}:/app/dist:ro
+      - ${NOSTREAM_SEEDER_BOT_NODE_MODULES:-../nostream-seeder-bot/node_modules}:/app/node_modules:ro
       - ./seeder-bot/config.devel.json:/app/config.devel.json:ro
       - ./seeder-bot/upload:/tmp/iz-seeder-bot/upload
       - ./seeder-bot/transcoding:/tmp/iz-seeder-bot/transcoding
