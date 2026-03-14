@@ -16,7 +16,7 @@
   "devDependencies": {
     "@nostream/sdk": "^0.2.8",
     "@playwright/test": "^1.53.0",
-    "@red-token/welshman": "^0.2.9",
+    "@red-token/welshman": "0.2.8",
     "@types/node": "^24.0.0",
     "@types/simple-peer": "^9.11.9",
     "@types/webtorrent": "^0.110.1",
@@ -32,6 +32,7 @@
     "ws": "^8.18.0"
   },
   "overrides": {
-    "nostr-tools": "2.10.4"
+    "nostr-tools": "2.10.4",
+    "@red-token/welshman": "0.2.8"
   }
 }
